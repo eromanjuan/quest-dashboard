@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quest HQ — Customizable Command Center Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --amber:#ED4E0D; --ink:#15181d; --mut:#6b7280; --mut2:#9aa3b2;
+  --bg:#eef0f3; --card:#ffffff; --line:#e6e8ec; --soft:0 1px 2px rgba(17,24,39,.05);
+  --green:#16a34a; --blue:#2563eb; --violet:#7c3aed; --gold:#d97706; --red:#dc2626;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:14px}
+.mono{font-family:'JetBrains Mono',monospace}
+h1,h2,h3{margin:0}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1320px;margin:0 auto;padding:18px}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px}
+.brand .logo{width:34px;height:34px;border-radius:9px;background:var(--amber);display:grid;place-items:center;color:#fff;font-weight:900}
+.brand small{display:block;font-size:10px;letter-spacing:.12em;color:var(--mut2);font-weight:800;text-transform:uppercase}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;font-weight:700;font-size:13px;color:var(--ink)}
+.btn:hover{border-color:var(--amber)}
+.btn.primary{background:var(--amber);border-color:transparent;color:#fff}
+.btn.primary:hover{background:#ff5b18}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* Role tabs */
+.roles{display:flex;gap:6px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:5px}
+.roles button{border:none;background:transparent;border-radius:8px;padding:8px 15px;font-weight:800;font-size:13px;color:var(--mut)}
+.roles button.on{background:var(--amber);color:#fff}
+
+/* Filters */
+.filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin-bottom:16px;box-shadow:var(--soft)}
+.filters label{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mut2)}
+.filters select{font-family:inherit;font-weight:700;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--mut)}
+.seg button.on{background:var(--amber);color:#fff}
+.filters .fdivider{width:1px;height:26px;background:var(--line)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--soft);padding:18px;min-width:0}
+.card.span2{grid-column:1 / -1}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.card-h h3{font-size:15px;font-weight:800}
+.card-h p{margin:2px 0 0;font-size:12px;color:var(--mut);font-weight:500}
+.card-h .ctools{display:flex;align-items:center;gap:6px}
+.drag-handle,.rm{display:none;border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;height:30px;align-items:center;justify-content:center;color:var(--mut)}
+.editing .drag-handle,.editing .rm{display:inline-flex}
+.rm:hover{border-color:var(--red);color:var(--red)}
+.drag-handle{cursor:grab}
+.editing .card{outline:1.5px dashed #d8b8a6;outline-offset:3px}
+.card.dragging{opacity:.5}
+.chiplink{font-size:12px;font-weight:700;color:var(--amber);text-decoration:none}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:13px;padding:14px}
+.kpi .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}
+.kpi .ic svg{width:20px;height:20px;stroke-width:2}
+.kpi b{font-size:23px;font-weight:900;line-height:1}
+.kpi .lab{font-size:12px;color:var(--mut);font-weight:700}
+.kpi .sub{font-size:11px;color:var(--mut2);font-weight:600;margin-top:2px}
+
+/* Leaderboard */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);font-weight:800;padding:0 10px 9px;border-bottom:1px solid var(--line)}
+th.num,td.num{text-align:right}
+td{padding:11px 10px;border-bottom:1px solid #f1f3f6;font-size:13.5px;font-weight:600}
+tr:last-child td{border-bottom:none}
+tr.me{background:#fff7f2}
+.repcell{display:flex;align-items:center;gap:10px}
+.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:800;flex:0 0 auto}
+.repcell small{display:block;color:var(--mut2);font-weight:600;font-size:11px}
+.rank{width:22px;color:var(--mut2);font-weight:800;text-align:center}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px}
+.tag.g{background:#dcfce7;color:#15803d}.tag.a{background:#fef3c7;color:#b45309}.tag.r{background:#fee2e2;color:#b91c1c}
+
+/* bars */
+.bars{display:grid;gap:11px}
+.bar-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:11px}
+.bar-row .n{font-size:12.5px;font-weight:700;color:#374151;display:flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.track{height:10px;border-radius:6px;background:#f1f3f6;overflow:hidden}
+.track i{display:block;height:100%;border-radius:6px;min-width:3px}
+.bar-row .v{font-size:12.5px;font-weight:800;text-align:right;white-space:nowrap}
+.bar-row .v small{display:block;font-size:10px;font-weight:600;color:var(--mut2)}
+
+/* column chart */
+.cols{display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:8px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.col .barv{width:70%;background:linear-gradient(180deg,#ED4E0D,#ff7a3c);border-radius:6px 6px 3px 3px;min-height:4px}
+.col .cl{font-size:11px;color:var(--mut2);font-weight:700}
+.col .cv{font-size:11px;font-weight:800}
+
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:18px}
+.donut{position:relative;width:128px;height:128px;border-radius:50%;flex:0 0 auto}
+.donut .hole{position:absolute;inset:20px;background:#fff;border-radius:50%;display:grid;place-items:center;text-align:center}
+.donut .hole b{font-size:24px;font-weight:900;line-height:1}
+.donut .hole small{font-size:11px;color:var(--mut2);font-weight:700}
+.legend{display:grid;gap:8px;flex:1 1 auto;min-width:0}
+.legend div{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;font-size:12.5px;font-weight:600;color:#374151}
+.legend b{font-weight:800}
+
+/* funnel */
+.funnel{display:grid;gap:9px}
+.frow{display:grid;grid-template-columns:90px minmax(0,1fr) auto;align-items:center;gap:11px}
+.frow .fl{font-size:12.5px;font-weight:700;color:#374151}
+.ftrack{height:26px;border-radius:8px;background:#f1f3f6;overflow:hidden;display:flex;align-items:center}
+.ftrack i{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 9px;color:#fff;font-size:12px;font-weight:800;min-width:34px}
+.frow .fv{font-size:12px;font-weight:800;color:var(--mut);white-space:nowrap}
+
+/* dispatch */
+.disp{display:grid;gap:9px}
+.disp .row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:11px;padding:11px;border:1px solid var(--line);border-radius:11px}
+.disp .crew{font-size:11px;font-weight:800;color:#fff;background:var(--ink);border-radius:7px;padding:5px 9px;white-space:nowrap}
+.disp .jb{font-weight:700;font-size:13.5px}
+.disp .jb small{display:block;color:var(--mut2);font-weight:600;font-size:11.5px}
+.disp .st{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px}
+
+/* weather */
+.wx{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.wx .d{border:1px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center}
+.wx .d .dn{font-size:11px;font-weight:800;color:var(--mut)}
+.wx .d .em{font-size:26px;margin:4px 0}
+.wx .d .hi{font-weight:900}
+.wx .d .lo{color:var(--mut2);font-weight:700;font-size:12px}
+.wx .d.alert{background:#fff7f2;border-color:#f6c9b1}
+.wx .d .warn{font-size:9.5px;font-weight:800;color:var(--amber);margin-top:3px}
+
+/* reviews */
+.rev{display:flex;align-items:center;gap:18px}
+.rev .big{font-size:42px;font-weight:900;line-height:1}
+.stars{color:#f4b400;font-size:16px;letter-spacing:1px}
+.rev .meta{display:grid;gap:6px;font-size:13px;font-weight:600;color:#374151}
+.rev .meta b{font-weight:800}
+.vd{display:flex;flex-direction:column;gap:6px}
+.vd .row1{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.vd .big{font-size:30px;font-weight:900;line-height:1}
+.vd .sub{font-size:12px;color:var(--mut);font-weight:600}
+.vd .tgt{height:9px;border-radius:5px;background:#f1f3f6;overflow:hidden;margin-top:6px}
+.vd .tgt i{display:block;height:100%;border-radius:5px}
+.vrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;border-bottom:1px solid #f1f3f6}
+.vrow:last-child{border-bottom:none}
+.vrow b{font-weight:800}
+
+/* add-widget tray */
+.tray{display:none;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--soft)}
+.tray.open{display:block}
+.tray h3{font-size:14px;margin-bottom:4px}
+.tray p.sub{margin:0 0 12px;color:var(--mut);font-size:12.5px}
+.tray .grp{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mut2);margin:12px 0 8px}
+.tray .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:9px}
+.wopt{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.wopt .t{font-weight:700;font-size:13px}
+.wopt .t small{display:block;color:var(--mut2);font-weight:600;font-size:11px}
+.wopt button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-weight:800;font-size:12px;color:var(--amber)}
+.wopt button.added{background:#f3f4f6;color:var(--mut2);border-color:transparent}
+
+.muted{color:var(--mut2);font-size:12px;font-weight:600}
+.foot{color:var(--mut2);font-size:12px;text-align:center;padding:26px 0 8px}
+@media(max-width:840px){.grid{grid-template-columns:1fr}.card.span2{grid-column:auto}.kpis{grid-template-columns:repeat(2,1fr)}.wx{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand"><span class="logo">Q</span><span>Quest HQ<small>Command Center</small></span></div>
+    <div class="spacer"></div>
+    <div class="roles" id="roles">
+      <button data-role="exec" class="on">Exec</button>
+      <button data-role="sales">Sales</button>
+      <button data-role="ops">Operations</button>
+      <button data-role="scale">Scale</button>
+      <button data-role="eos">EOS</button>
+    </div>
+    <button class="btn" id="addBtn">＋ Add widget</button>
+    <button class="btn" id="editBtn">✎ Customize</button>
+  </div>
+
+  <div class="filters">
+    <label>Rep</label>
+    <select id="repSel"></select>
+    <div class="fdivider"></div>
+    <label>Range</label>
+    <div class="seg" id="rangeSeg">
+      <button data-r="today">Today</button>
+      <button data-r="week" class="on">This week</button>
+      <button data-r="month">This month</button>
+      <button data-r="quarter">Quarter</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="muted" id="ctx"></span>
+  </div>
+
+  <div class="tray" id="tray"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="foot">Prototype with sample data · Quest HQ customizable dashboard · drag to rearrange in Customize mode</div>
+</div>
+
+<script>
+/* ---------------- sample data ---------------- */
+const REPS = [
+  {id:'jesus',  name:'Jesus Romero',  role:'Closer',    initials:'JR', color:'#ED4E0D', calls:142, leads:38, proposals:27, sits:22, won:14, revenue:286000, speed:4},
+  {id:'maya',   name:'Maya Rosales',  role:'Sales Rep', initials:'MR', color:'#7c3aed', calls:120, leads:31, proposals:22, sits:18, won:11, revenue:214000, speed:7},
+  {id:'andre',  name:'Andre Lee',     role:'Sales Rep', initials:'AL', color:'#16a34a', calls:98,  leads:24, proposals:19, sits:15, won:9,  revenue:178000, speed:9},
+  {id:'abraham',name:'Abraham Flores',role:'Owner',     initials:'AF', color:'#d97706', calls:46,  leads:12, proposals:8,  sits:7,  won:6,  revenue:148000, speed:5},
+  {id:'ralph',  name:'Ralph Mendez',  role:'Lead Gen',  initials:'RM', color:'#2563eb', calls:210, leads:64, proposals:12, sits:9,  won:5,  revenue:92000,  speed:12},
+];
+const SOURCES=[{n:'Google LSA',v:42,c:'#ED4E0D'},{n:'Meta Ads',v:31,c:'#2563eb'},{n:'Referral',v:24,c:'#16a34a'},{n:'Door knock',v:18,c:'#7c3aed'},{n:'Website',v:14,c:'#d97706'}];
+const CALLS_WK=[{d:'Mon',v:88},{d:'Tue',v:104},{d:'Wed',v:76},{d:'Thu',v:120},{d:'Fri',v:96},{d:'Sat',v:42},{d:'Sun',v:12}];
+const JOBS=[{n:'Scheduled',v:6,c:'#94a3b8'},{n:'Material ordered',v:4,c:'#2563eb'},{n:'In production',v:5,c:'#ED4E0D'},{n:'Complete',v:9,c:'#16a34a'}];
+const DISPATCH=[
+  {crew:'Crew A',job:'Queen Creek Leak Follow-up',sub:'Rosales Residence · re-roof',time:'7:00a',st:'En route',c:'#2563eb'},
+  {crew:'Crew B',job:'Mesa Storage Roof Repair',sub:'Mesa Storage Partners · membrane',time:'7:30a',st:'On site',c:'#16a34a'},
+  {crew:'Crew C',job:'Encanto Tear-off',sub:'Cruz-Blanch · tear-off + dry-in',time:'8:00a',st:'Scheduled',c:'#94a3b8'},
+  {crew:'Sub 1', job:'Sycamore Inspection',sub:'Permit inspection window',time:'1:00p',st:'Pending',c:'#d97706'},
+];
+const WX=[
+  {d:'Mon',em:'☀️',hi:104,lo:78,warn:''},
+  {d:'Tue',em:'☀️',hi:106,lo:80,warn:''},
+  {d:'Wed',em:'⛈️',hi:97,lo:76,warn:'No dry-in'},
+  {d:'Thu',em:'🌤️',hi:101,lo:77,warn:''},
+  {d:'Fri',em:'💨',hi:99,lo:75,warn:'High wind'},
+];
+const AR=[{n:'Current',v:4300,c:'#16a34a'},{n:'1–30',v:18400,c:'#d97706'},{n:'31–60',v:6200,c:'#ea580c'},{n:'61+',v:2100,c:'#dc2626'}];
+const FIN={invoiced:251200,collected:198400,outstanding:31000};
+const REVIEWS={rating:4.8,count:212,newWk:6,sent:24,resp:'92%'};
+
+/* ---- value-driver / PE-lens data ---- */
+const TICKET={blended:14200, residential:9800, commercial:38400, prev:13100, history:[11.2,11.9,12.4,13.1,13.6,14.2]};
+const REV_HISTORY=[182,196,205,221,238,251];
+const PERF={
+  grossMargin:42, grossMarginPrev:39, grossTarget:45,
+  ebitda:38600, ebitdaMargin:15.4, ebitdaPrev:13.8,
+  revThis:251200, revPrev:223400, target:300000,
+  crews:4, techs:11,
+  marketingSpend:22400, mktLeads:169, mktJobs:45,
+  backlog:412000, backlogWeeks:6.5,
+  memberships:284, mrr:9860, churn:2.1,
+  concentration:[{n:'Mesa Storage Partners',v:22},{n:'Cruz-Blanch Group',v:14},{n:'City of Gilbert',v:9},{n:'All others',v:55}]
+};
+
+/* ---- scaling / ceiling data ---- */
+const COVERAGE={open:720000,target:PERF.target};
+const UTIL={crews:[{name:'Crew A',u:92},{name:'Crew B',u:85},{name:'Crew C',u:78},{name:'Crew D',u:64}]};
+const HIRE={funnel:[{l:'Applicants',v:48},{l:'Screened',v:22},{l:'Interviewed',v:11},{l:'Hired',v:4}],open:5,turnover:24,laborPct:31,tenure:2.6};
+const QUOTA={jesus:250000,maya:200000,andre:180000,abraham:120000,ralph:100000};
+const CASH={now:184000,floor:80000,dso:38,dsoPrev:44,dsoTarget:30,weeks:[184,176,168,192,210,198,186,172,160,178,196,214,205]};
+const MARGIN={variance:-4.2,over:3,total:12,leak:14200};
+const UNIT={ltv:10100,cac:498,payback:'first job'};
+const OWNER={score:62,items:[{k:'Sales closes without owner',s:'partial'},{k:'Ops dispatches without owner',s:'yes'},{k:'Finance / AR runs without owner',s:'yes'},{k:'Marketing generates leads',s:'partial'},{k:'Documented SOPs in place',s:'partial'}]};
+const SCORE=[
+ {metric:'Leads / week',owner:'Ralph',goal:'40',actual:'38',hit:'a'},
+ {metric:'Booking rate',owner:'CSR',goal:'70%',actual:'66%',hit:'a'},
+ {metric:'Close rate',owner:'Jesus',goal:'50%',actual:'52%',hit:'g'},
+ {metric:'Avg ticket',owner:'Sales',goal:'$14k',actual:'$14.2k',hit:'g'},
+ {metric:'Crew utilization',owner:'Ops',goal:'85%',actual:'80%',hit:'a'},
+ {metric:'Cash on hand',owner:'Finance',goal:'>$150k',actual:'$184k',hit:'g'},
+ {metric:'New reviews',owner:'Office',goal:'5',actual:'6',hit:'g'},
+];
+const MIX=[{l:'Re-roof',v:48,c:'#ED4E0D'},{l:'Repairs',v:22,c:'#2563eb'},{l:'Commercial',v:18,c:'#7c3aed'},{l:'Maintenance plans',v:12,c:'#16a34a'}];
+
+/* ---- EOS / Traction data ---- */
+const ROCKS={quarter:'Q3 2026',onTrack:5,total:7,list:[
+ {r:'Launch maintenance-plan program',owner:'Abraham',pct:70,st:'on'},
+ {r:'Hire + ramp 2 install crews',owner:'Alkeith',pct:55,st:'on'},
+ {r:'Roll out Command Center company-wide',owner:'Sean',pct:80,st:'on'},
+ {r:'Get DSO under 30 days',owner:'Kristine',pct:40,st:'off'},
+ {r:'Stand up commercial division',owner:'Jesus',pct:60,st:'on'},
+ {r:'Document field SOPs',owner:'Andres',pct:30,st:'off'},
+ {r:'Hit 4.9 Google rating',owner:'Maya',pct:75,st:'on'},
+]};
+const ISSUES={open:9,solvedWk:4,list:[
+ {i:'Material delivery delays on Mesa job',p:'High'},
+ {i:'Two crews double-booked Thursday',p:'High'},
+ {i:'Proposal template missing commercial terms',p:'Med'},
+ {i:'New rep ramp slower than plan',p:'Med'},
+ {i:'Review requests not auto-sending',p:'Low'},
+]};
+const TODOS={done:11,total:16,list:[
+ {t:'Send commercial MSA to Mesa Storage',who:'Jesus',done:true},
+ {t:'Post 2 installer job ads',who:'Kristine',done:true},
+ {t:'Finalize maintenance-plan pricing',who:'Abraham',done:false},
+ {t:'Fix review automation',who:'Sean',done:false},
+ {t:'Schedule Q3 rock review',who:'Abraham',done:true},
+]};
+const L10={rating:8.4,prevRating:7.9,attendance:'6/6',onTime:true,streak:11};
+const PEOPLE=[
+ {name:'Jesus Romero',role:'Closer',cv:'+',g:true,w:true,c:true},
+ {name:'Maya Rosales',role:'Sales Rep',cv:'+',g:true,w:true,c:'?'},
+ {name:'Andre Lee',role:'Sales Rep',cv:'±',g:true,w:'?',c:true},
+ {name:'Ralph Mendez',role:'Lead Gen',cv:'+',g:true,w:true,c:true},
+ {name:'Alkeith B.',role:'Field Ops Lead',cv:'+',g:true,w:true,c:true},
+];
+const COMPONENTS=[{c:'Vision',v:78},{c:'People',v:65},{c:'Data',v:88},{c:'Issues',v:72},{c:'Process',v:58},{c:'Traction',v:80}];
+const PLAN={year:'2026',revGoal:3200000,revActual:1480000,profitGoal:480000,profitActual:228000};
+const VALUES=['Do what you say','Win as a team','Bring solutions','Own the outcome','Raise the standard'];
+
+/* range scaling (week = base numbers above) */
+const SCALE={today:0.18,week:1,month:4.3,quarter:13};
+
+/* ---------------- icons ---------------- */
+const IC={
+  phone:'<path d="M5 4h4l2 5-3 2a14 14 0 006 6l2-3 5 2v4a2 2 0 01-2 2A18 18 0 013 6a2 2 0 012-2"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>',
+  doc:'<path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M14 3v5h5"/>',
+  cash:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+  bolt:'<path d="M13 3L4 14h7l-1 7 9-11h-7z"/>',
+  trophy:'<path d="M7 4h10v4a5 5 0 01-10 0zM5 4H3v2a3 3 0 003 3M19 4h2v2a3 3 0 01-3 3M9 20h6M12 13v7"/>',
+};
+const svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const money=n=>'$'+Math.round(n).toLocaleString();
+const av=r=>`<span class="av" style="background:${r.color}">${r.initials}</span>`;
+function dpct(cur,prev){return prev?Math.round((cur-prev)/prev*100):0;}
+function deltaChip(cur,prev,invert){const d=dpct(cur,prev);const up=d>=0;const good=invert?!up:up;const col=good?'#16a34a':'#dc2626';return `<span style="font-size:11.5px;font-weight:800;color:${col}">${up?'▲':'▼'} ${Math.abs(d)}%</span>`;}
+function spark(vals,color){const m=Math.max(...vals);return `<span style="display:inline-flex;align-items:flex-end;gap:3px;height:24px;vertical-align:middle">${vals.map(v=>`<i style="display:block;width:6px;height:${Math.max(Math.round(v/m*24),3)}px;background:${color};border-radius:2px;opacity:.85"></i>`).join('')}</span>`;}
+
+/* ---------------- state ---------------- */
+let ROLE='exec', RANGE='week', REP='all', EDIT=false;
+const DEFAULTS={
+  exec:['kpis','avgTicket','grossMargin','ebitda','revGrowth','goalPacing','leaderboard','backlog','recurring','jobs','revenue','reviews'],
+  sales:['kpis','leaderboard','callsTrend','sources','funnel','speed'],
+  ops:['jobs','dispatch','weather','kpis','revenue'],
+  scale:['pipelineCoverage','utilization','recruiting','quota','turnover','cash13','dso','jobCostVariance','ltvCac','recurring','ownerScore','serviceMix','scorecard'],
+  eos:['rocks','scorecard','oneYearPlan','l10pulse','issues','todos','peopleAnalyzer','eosComponents','coreValues']
+};
+let layout={exec:[...DEFAULTS.exec],sales:[...DEFAULTS.sales],ops:[...DEFAULTS.ops],scale:[...DEFAULTS.scale],eos:[...DEFAULTS.eos]};
+
+/* selected reps after filter */
+function pool(){ return REP==='all'?REPS:REPS.filter(r=>r.id===REP); }
+function tot(k){ return pool().reduce((s,r)=>s+r[k],0); }
+function scaled(v){ return Math.round(v*SCALE[RANGE]); }
+
+/* ---------------- widgets ---------------- */
+const WIDGETS={
+  kpis:{title:'Activity totals',group:'Sales',span:true,render(){
+    const calls=scaled(tot('calls')),leads=scaled(tot('leads')),props=scaled(tot('proposals')),rev=Math.round(tot('revenue')*SCALE[RANGE]);
+    const tile=(ic,col,val,lab,sub)=>`<div class="kpi"><span class="ic" style="background:${col}1f;color:${col}">${svg(ic)}</span><div><b>${val}</b><div class="lab">${lab}</div><div class="sub">${sub}</div></div></div>`;
+    return `<div class="kpis">
+      ${tile(IC.phone,'#2563eb',calls,'Calls logged','connect rate 38%')}
+      ${tile(IC.user,'#16a34a',leads,'Leads generated','5 sources')}
+      ${tile(IC.doc,'#ED4E0D',props,'Proposals sent','avg '+money(18500))}
+      ${tile(IC.cash,'#7c3aed',money(rev),'Revenue won',scaled(tot('won'))+' jobs')}
+    </div>`;
+  }},
+  leaderboard:{title:'Rep leaderboard',group:'Sales',span:true,render(){
+    const rows=[...REPS].sort((a,b)=>b.revenue-a.revenue).map((r,i)=>{
+      const close=Math.round(r.won/r.proposals*100);
+      const cls=REP===r.id?'me':'';
+      const tg=close>=55?'g':close>=40?'a':'r';
+      return `<tr class="${cls}"><td class="rank">${i+1}</td>
+        <td><div class="repcell">${av(r)}<div>${r.name}<small>${r.role}</small></div></div></td>
+        <td class="num">${scaled(r.calls)}</td><td class="num">${scaled(r.leads)}</td>
+        <td class="num">${scaled(r.proposals)}</td><td class="num">${scaled(r.sits)}</td>
+        <td class="num">${scaled(r.won)}</td><td class="num">${money(r.revenue*SCALE[RANGE])}</td>
+        <td class="num"><span class="tag ${tg}">${close}%</span></td></tr>`;
+    }).join('');
+    return `<table><thead><tr><th class="rank">#</th><th>Rep</th><th class="num">Calls</th><th class="num">Leads</th><th class="num">Props</th><th class="num">Sits</th><th class="num">Won</th><th class="num">Revenue</th><th class="num">Close</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }},
+  callsTrend:{title:'Calls logged',group:'Sales',sub:'This week by day',render(){
+    const max=Math.max(...CALLS_WK.map(d=>d.v));
+    return `<div class="cols">${CALLS_WK.map(d=>`<div class="col"><div class="cv">${d.v}</div><div class="barv" style="height:${Math.round(d.v/max*100)}%"></div><div class="cl">${d.d}</div></div>`).join('')}</div>`;
+  }},
+  sources:{title:'Leads by source',group:'Sales',render(){
+    const total=SOURCES.reduce((s,x)=>s+x.v,0);let acc=0;
+    const seg=SOURCES.map(x=>{const a=acc/total*100;acc+=x.v;return `${x.c} ${a}% ${acc/total*100}%`;}).join(',');
+    return `<div class="donut-wrap"><div class="donut" style="background:conic-gradient(${seg})"><div class="hole"><b>${total}</b><small>leads</small></div></div>
+      <div class="legend">${SOURCES.map(x=>`<div><span class="dot" style="background:${x.c}"></span><span>${x.n}</span><b>${x.v}</b></div>`).join('')}</div></div>`;
+  }},
+  funnel:{title:'Sales funnel',group:'Sales',sub:'Lead → won, with conversion',render(){
+    const F=[{l:'Leads',v:scaled(tot('leads'))},{l:'Contacted',v:scaled(Math.round(tot('leads')*.78))},{l:'Proposals',v:scaled(tot('proposals'))},{l:'Won',v:scaled(tot('won'))}];
+    const max=F[0].v||1;const cols=['#94a3b8','#2563eb','#ED4E0D','#16a34a'];
+    return `<div class="funnel">${F.map((f,i)=>{const pct=Math.round(f.v/max*100);const conv=i?Math.round(f.v/F[i-1].v*100):100;return `<div class="frow"><span class="fl">${f.l}</span><span class="ftrack"><i style="width:${Math.max(pct,12)}%;background:${cols[i]}">${f.v}</i></span><span class="fv">${i?conv+'%':''}</span></div>`;}).join('')}</div>`;
+  }},
+  speed:{title:'Speed-to-lead',group:'Sales',sub:'Avg time to first contact',render(){
+    const mins=Math.round(pool().reduce((s,r)=>s+r.speed,0)/pool().length);
+    const tone=mins<=5?'#16a34a':mins<=10?'#d97706':'#dc2626';
+    return `<div style="text-align:center;padding:6px 0"><div style="font-size:46px;font-weight:900;color:${tone};line-height:1">${mins}<span style="font-size:18px"> min</span></div>
+      <div class="muted" style="margin-top:6px">Target under 5 min · ${mins<=5?'on target':'needs work'}</div>
+      <div class="track" style="margin-top:14px;height:12px"><i style="width:${Math.min(mins/15*100,100)}%;background:${tone}"></i></div></div>`;
+  }},
+  jobs:{title:'Jobs by stage',group:'Operations',sub:'Active production board',render(){
+    const max=Math.max(...JOBS.map(j=>j.v));
+    return `<div class="bars">${JOBS.map(j=>`<div class="bar-row"><span class="n"><span class="dot" style="background:${j.c}"></span>${j.n}</span><span class="track"><i style="width:${Math.round(j.v/max*100)}%;background:${j.c}"></i></span><span class="v">${j.v}<small>jobs</small></span></div>`).join('')}</div>`;
+  }},
+  dispatch:{title:"Today's dispatch",group:'Operations',span:true,sub:'Crews and jobs scheduled today',render(){
+    return `<div class="disp">${DISPATCH.map(d=>`<div class="row"><span class="crew">${d.crew}</span><div class="jb">${d.job}<small>${d.sub} · ${d.time}</small></div><span class="st" style="background:${d.c}1f;color:${d.c}">${d.st}</span></div>`).join('')}</div>`;
+  }},
+  weather:{title:'5-day field forecast',group:'Operations',sub:'Phoenix, AZ · affects scheduling',render(){
+    return `<div class="wx">${WX.map(w=>`<div class="d ${w.warn?'alert':''}"><div class="dn">${w.d}</div><div class="em">${w.em}</div><div class="hi">${w.hi}°</div><div class="lo">${w.lo}°</div>${w.warn?`<div class="warn">${w.warn}</div>`:''}</div>`).join('')}</div>`;
+  }},
+  revenue:{title:'Revenue & receivables',group:'Finance',render(){
+    const pct=Math.round(FIN.collected/FIN.invoiced*100);const max=Math.max(...AR.map(a=>a.v));
+    return `<div class="bars" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Invoiced</span><b>${money(FIN.invoiced)}</b></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Collected</span><b style="color:#16a34a">${money(FIN.collected)}</b></div>
+      <div class="track" style="height:12px"><i style="width:${pct}%;background:linear-gradient(90deg,#16a34a,#22c55e)"></i></div>
+      <div class="muted">${pct}% collected</div></div>
+      <div class="grp" style="font-size:11px;font-weight:800;color:#9aa3b2;text-transform:uppercase;margin:6px 0 8px">AR aging</div>
+      <div class="bars">${AR.map(a=>`<div class="bar-row"><span class="n">${a.n}</span><span class="track"><i style="width:${Math.round(a.v/max*100)}%;background:${a.c}"></i></span><span class="v">${money(a.v)}</span></div>`).join('')}</div>`;
+  }},
+  reviews:{title:'Reviews & reputation',group:'Reputation',render(){
+    const full=Math.round(REVIEWS.rating);
+    return `<div class="rev"><div><div class="big">${REVIEWS.rating}</div><div class="stars">${'★'.repeat(full)}${'☆'.repeat(5-full)}</div></div>
+      <div class="meta"><div><b>${REVIEWS.count}</b> total reviews</div><div><b>${REVIEWS.newWk}</b> new this week</div><div><b>${REVIEWS.sent}</b> requests sent</div><div><b>${REVIEWS.resp}</b> response rate</div></div></div>`;
+  }},
+  avgTicket:{title:'Avg ticket',group:'Value drivers',sub:'Average job contract total',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${money(TICKET.blended)}</span>${deltaChip(TICKET.blended,TICKET.prev)}</div>
+      <div class="sub">Residential ${money(TICKET.residential)} · Commercial ${money(TICKET.commercial)}</div>
+      <div style="margin-top:10px">${spark(TICKET.history,'#ED4E0D')}<span class="sub" style="margin-left:9px">trailing 6 months</span></div></div>`;
+  }},
+  grossMargin:{title:'Gross margin',group:'Value drivers',sub:'Blended, vs target',render(){
+    const pct=PERF.grossMargin,t=PERF.grossTarget;
+    return `<div class="vd"><div class="row1"><span class="big">${pct}%</span>${deltaChip(pct,PERF.grossMarginPrev)}</div>
+      <div class="tgt"><i style="width:${Math.min(pct/t*100,100)}%;background:${pct>=t?'#16a34a':'#ED4E0D'}"></i></div>
+      <div class="sub">Target ${t}% · ${pct>=t?'at target':(t-pct)+' pts to target'}</div></div>`;
+  }},
+  ebitda:{title:'EBITDA',group:'Value drivers',sub:'The valuation lens',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${money(PERF.ebitda)}</span>${deltaChip(PERF.ebitdaMargin,PERF.ebitdaPrev)}</div>
+      <div class="sub">${PERF.ebitdaMargin}% margin · up from ${PERF.ebitdaPrev}%</div>
+      <div class="sub" style="color:#9aa3b2;margin-top:4px">Every margin point lifts the exit multiple.</div></div>`;
+  }},
+  revGrowth:{title:'Revenue growth',group:'Value drivers',sub:'Trailing 6 months',render(){
+    const g=dpct(PERF.revThis,PERF.revPrev),max=Math.max(...REV_HISTORY);
+    return `<div class="vd"><div class="row1"><span class="big">+${g}%</span><span class="sub">vs last period</span></div>
+      <div class="cols" style="height:96px;margin-top:8px">${REV_HISTORY.map((v,i)=>`<div class="col"><div class="cv">${v}k</div><div class="barv" style="height:${Math.round(v/max*100)}%"></div><div class="cl">M${i+1}</div></div>`).join('')}</div></div>`;
+  }},
+  revPerCrew:{title:'Revenue per crew',group:'Value drivers',sub:'Labor productivity',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${money(PERF.revThis/PERF.crews)}</span><span class="sub">${PERF.crews} crews</span></div>
+      <div class="sub">${money(PERF.revThis/PERF.techs)} per tech · ${PERF.techs} techs on payroll</div></div>`;
+  }},
+  marketing:{title:'Marketing efficiency',group:'Value drivers',sub:'CAC · CPL · ROI',render(){
+    const cac=PERF.marketingSpend/PERF.mktJobs,cpl=PERF.marketingSpend/PERF.mktLeads,roas=PERF.revThis/PERF.marketingSpend;
+    const r=(l,v)=>`<div class="vrow"><span class="sub">${l}</span><b>${v}</b></div>`;
+    return `<div>${r('Cost per acquired job (CAC)',money(cac))}${r('Cost per lead',money(cpl))}${r('Marketing ROI',roas.toFixed(1)+'×')}${r('Spend (period)',money(PERF.marketingSpend))}</div>`;
+  }},
+  backlog:{title:'Backlog',group:'Value drivers',sub:'Signed, not yet completed',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${money(PERF.backlog)}</span><span class="sub">${PERF.backlogWeeks} wks of work</span></div>
+      <div class="sub">Future revenue already booked — the forward visibility buyers pay up for.</div></div>`;
+  }},
+  recurring:{title:'Recurring revenue',group:'Value drivers',sub:'Service plans & memberships',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${PERF.memberships}</span><span class="sub">active members</span></div>
+      <div class="sub">${money(PERF.mrr)} MRR · ${PERF.churn}% monthly churn</div>
+      <div class="sub" style="color:#9aa3b2;margin-top:4px">Recurring revenue earns a premium multiple.</div></div>`;
+  }},
+  goalPacing:{title:'Goal pacing',group:'Value drivers',sub:'Revenue vs monthly target',render(){
+    const pct=Math.round(PERF.revThis/PERF.target*100);
+    return `<div class="vd"><div class="row1"><span class="big">${pct}%</span><span class="sub">to ${money(PERF.target)}</span></div>
+      <div class="tgt" style="height:12px"><i style="width:${Math.min(pct,100)}%;background:linear-gradient(90deg,#ED4E0D,#ff7a3c)"></i></div>
+      <div class="sub">${money(PERF.revThis)} booked · ${pct>=75?'on pace':'behind pace'}</div></div>`;
+  }},
+  concentration:{title:'Customer concentration',group:'Value drivers',sub:'Revenue share — risk lens',render(){
+    const max=Math.max(...PERF.concentration.map(c=>c.v)),cols=['#ED4E0D','#2563eb','#7c3aed','#94a3b8'];
+    return `<div class="bars">${PERF.concentration.map((c,i)=>`<div class="bar-row"><span class="n">${c.n}</span><span class="track"><i style="width:${Math.round(c.v/max*100)}%;background:${cols[i%cols.length]}"></i></span><span class="v">${c.v}%</span></div>`).join('')}</div>`;
+  }},
+  pipelineCoverage:{title:'Pipeline coverage',group:'Growth',sub:'Open pipeline ÷ target',render(){
+    const cov=COVERAGE.open/COVERAGE.target,tone=cov>=3?'#16a34a':cov>=2?'#d97706':'#dc2626';
+    return `<div class="vd"><div class="row1"><span class="big" style="color:${tone}">${cov.toFixed(1)}×</span><span class="sub">need 3× to hit goal</span></div>
+      <div class="tgt" style="height:12px"><i style="width:${Math.min(cov/3*100,100)}%;background:${tone}"></i></div>
+      <div class="sub">${money(COVERAGE.open)} open vs ${money(COVERAGE.target)} target · ${cov>=3?'enough fuel':'generate more leads'}</div></div>`;
+  }},
+  utilization:{title:'Crew utilization',group:'Capacity',sub:'Booked hours ÷ capacity',render(){
+    const avg=Math.round(UTIL.crews.reduce((s,c)=>s+c.u,0)/UTIL.crews.length);
+    return `<div class="vd"><div class="row1"><span class="big">${avg}%</span><span class="sub">avg of ${UTIL.crews.length} crews</span></div>
+      <div class="bars" style="margin-top:8px">${UTIL.crews.map(c=>`<div class="bar-row"><span class="n">${c.name}</span><span class="track"><i style="width:${c.u}%;background:${c.u>=85?'#16a34a':c.u>=70?'#d97706':'#dc2626'}"></i></span><span class="v">${c.u}%</span></div>`).join('')}</div>
+      <div class="sub" style="margin-top:6px">Past 85% you must add a crew to grow.</div></div>`;
+  }},
+  recruiting:{title:'Recruiting funnel',group:'People',sub:'Applicants → hires',render(){
+    const F=HIRE.funnel,max=F[0].v,cols=['#94a3b8','#2563eb','#ED4E0D','#16a34a'];
+    return `<div class="funnel">${F.map((f,i)=>`<div class="frow"><span class="fl">${f.l}</span><span class="ftrack"><i style="width:${Math.max(Math.round(f.v/max*100),12)}%;background:${cols[i]}">${f.v}</i></span><span class="fv">${i?Math.round(f.v/F[i-1].v*100)+'%':''}</span></div>`).join('')}</div>
+      <div class="sub" style="margin-top:8px">${HIRE.open} roles open · you scale on people, not jobs.</div>`;
+  }},
+  turnover:{title:'Turnover & labor cost',group:'People',sub:'Retention + labor efficiency',render(){
+    return `<div><div class="vrow"><span class="sub">Annualized turnover</span><b style="color:${HIRE.turnover>20?'#dc2626':'#16a34a'}">${HIRE.turnover}%</b></div>
+      <div class="vrow"><span class="sub">Labor cost % of revenue</span><b>${HIRE.laborPct}%</b></div>
+      <div class="vrow"><span class="sub">Avg tenure</span><b>${HIRE.tenure} yrs</b></div>
+      <div class="sub" style="margin-top:8px">Cutting turnover protects margin and capacity at once.</div></div>`;
+  }},
+  quota:{title:'Quota attainment',group:'People',sub:'Rep vs monthly quota',render(){
+    return `<div class="bars">${REPS.map(r=>{const q=QUOTA[r.id]||1,a=Math.round(r.revenue/q*100),c=a>=100?'#16a34a':a>=75?'#d97706':'#dc2626';return `<div class="bar-row"><span class="n">${r.name.split(' ')[0]}</span><span class="track"><i style="width:${Math.min(a,100)}%;background:${c}"></i></span><span class="v">${a}%</span></div>`;}).join('')}</div>`;
+  }},
+  cash13:{title:'13-week cash flow',group:'Cash flow',sub:'Projected balance & runway',render(){
+    const w=CASH.weeks,max=Math.max(...w),min=Math.min(...w);
+    return `<div class="vd"><div class="row1"><span class="big">${money(CASH.now)}</span><span class="sub">cash on hand</span></div>
+      <div class="cols" style="height:84px;margin-top:8px">${w.map(v=>`<div class="col"><div class="barv" style="height:${Math.round(v/max*100)}%;background:${v*1000<=CASH.floor?'linear-gradient(180deg,#dc2626,#f87171)':'linear-gradient(180deg,#16a34a,#4ade80)'}"></div></div>`).join('')}</div>
+      <div class="sub">13-week low ${money(min*1000)} · ${min*1000>CASH.floor?'stays above safety floor':'dips below floor'}</div></div>`;
+  }},
+  dso:{title:'Collections (DSO)',group:'Cash flow',sub:'Days to turn invoices into cash',render(){
+    const tone=CASH.dso<=30?'#16a34a':CASH.dso<=45?'#d97706':'#dc2626';
+    return `<div class="vd"><div class="row1"><span class="big" style="color:${tone}">${CASH.dso}<span style="font-size:16px"> days</span></span>${deltaChip(CASH.dso,CASH.dsoPrev,true)}</div>
+      <div class="sub">Target ${CASH.dsoTarget} days · ${CASH.dso<=CASH.dsoTarget?'on target':(CASH.dso-CASH.dsoTarget)+' days slow'}</div>
+      <div class="sub" style="color:#9aa3b2;margin-top:4px">Faster collections = self-funded growth.</div></div>`;
+  }},
+  jobCostVariance:{title:'Job-cost variance',group:'Cash flow',sub:'Estimated vs actual margin',render(){
+    return `<div class="vd"><div class="row1"><span class="big" style="color:${MARGIN.variance<0?'#dc2626':'#16a34a'}">${MARGIN.variance>0?'+':''}${MARGIN.variance}%</span><span class="sub">avg margin vs estimate</span></div>
+      <div class="vrow"><span class="sub">Jobs over budget</span><b>${MARGIN.over} of ${MARGIN.total}</b></div>
+      <div class="vrow"><span class="sub">Margin leakage (period)</span><b style="color:#dc2626">${money(MARGIN.leak)}</b></div>
+      <div class="sub" style="margin-top:6px">Plug this and it drops straight to EBITDA.</div></div>`;
+  }},
+  ltvCac:{title:'LTV : CAC',group:'Strategy',sub:'Unit economics & payback',render(){
+    const ratio=UNIT.ltv/UNIT.cac;
+    return `<div class="vd"><div class="row1"><span class="big">${ratio.toFixed(0)}×</span><span class="sub">healthy is 3×+</span></div>
+      <div class="vrow"><span class="sub">Lifetime gross profit (LTV)</span><b>${money(UNIT.ltv)}</b></div>
+      <div class="vrow"><span class="sub">Acquisition cost (CAC)</span><b>${money(UNIT.cac)}</b></div>
+      <div class="vrow"><span class="sub">CAC payback</span><b>${UNIT.payback}</b></div>
+      <div class="sub" style="margin-top:6px">Economics are strong — the constraint is lead volume, not payback.</div></div>`;
+  }},
+  ownerScore:{title:'Owner-dependency score',group:'Strategy',sub:'Can it run without you = sellable',render(){
+    const map={yes:['#16a34a','Runs without you'],partial:['#d97706','Partly'],no:['#dc2626','Needs you']};
+    return `<div class="vd"><div class="row1"><span class="big">${OWNER.score}<span style="font-size:16px">/100</span></span><span class="sub">${OWNER.score>=75?'sellable':OWNER.score>=50?'getting there':'owner-dependent'}</span></div>
+      <div style="margin-top:8px">${OWNER.items.map(it=>{const m=map[it.s];return `<div class="vrow"><span class="sub">${it.k}</span><b style="color:${m[0]};font-size:12px">${m[1]}</b></div>`;}).join('')}</div></div>`;
+  }},
+  scorecard:{title:'Company scorecard',group:'EOS',span:true,sub:'Weekly numbers, one owner each (EOS-style)',render(){
+    const rows=SCORE.map(s=>`<tr><td>${s.metric}</td><td>${s.owner}</td><td class="num">${s.goal}</td><td class="num">${s.actual}</td><td class="num"><span class="tag ${s.hit}">${s.hit==='g'?'On track':s.hit==='a'?'Watch':'Off'}</span></td></tr>`).join('');
+    return `<table><thead><tr><th>Metric</th><th>Owner</th><th class="num">Goal</th><th class="num">Actual</th><th class="num">Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }},
+  serviceMix:{title:'Revenue by service line',group:'Strategy',sub:'Diversification & where to scale',render(){
+    const max=Math.max(...MIX.map(m=>m.v));
+    return `<div class="bars">${MIX.map(m=>`<div class="bar-row"><span class="n"><span class="dot" style="background:${m.c}"></span>${m.l}</span><span class="track"><i style="width:${Math.round(m.v/max*100)}%;background:${m.c}"></i></span><span class="v">${m.v}%</span></div>`).join('')}</div>`;
+  }},
+  rocks:{title:'Quarterly Rocks',group:'EOS',span:true,sub:ROCKS.quarter+' priorities · '+ROCKS.onTrack+' of '+ROCKS.total+' on track',render(){
+    return `<div class="bars">${ROCKS.list.map(r=>`<div class="bar-row" style="grid-template-columns:minmax(0,1fr) 120px auto"><span class="n" style="white-space:normal;display:block">${r.r}<small style="display:block;color:#9aa3b2;font-weight:600">${r.owner}</small></span><span class="track"><i style="width:${r.pct}%;background:${r.st==='on'?'#16a34a':'#dc2626'}"></i></span><span class="v"><span class="tag ${r.st==='on'?'g':'r'}">${r.st==='on'?'On track':'Off track'}</span></span></div>`).join('')}</div>`;
+  }},
+  issues:{title:'Issues list (IDS)',group:'EOS',sub:ISSUES.open+' open · '+ISSUES.solvedWk+' solved this week',render(){
+    const pc={High:'r',Med:'a',Low:'g'};
+    return `<div>${ISSUES.list.map(x=>`<div class="vrow"><span>${x.i}</span><span class="tag ${pc[x.p]}">${x.p}</span></div>`).join('')}</div>`;
+  }},
+  todos:{title:'To-dos (7-day)',group:'EOS',sub:'Action items from last L10',render(){
+    const pct=Math.round(TODOS.done/TODOS.total*100);
+    return `<div class="vd"><div class="row1"><span class="big">${pct}%</span><span class="sub">${TODOS.done}/${TODOS.total} done</span></div>
+      <div class="tgt" style="height:10px"><i style="width:${pct}%;background:#16a34a"></i></div>
+      <div style="margin-top:8px">${TODOS.list.map(t=>`<div class="vrow"><span class="sub">${t.done?'✓':'○'} ${t.t}</span><b style="font-size:12px;color:#9aa3b2">${t.who}</b></div>`).join('')}</div></div>`;
+  }},
+  l10pulse:{title:'L10 meeting pulse',group:'EOS',sub:'Weekly leadership meeting',render(){
+    return `<div class="vd"><div class="row1"><span class="big">${L10.rating}<span style="font-size:16px">/10</span></span>${deltaChip(L10.rating,L10.prevRating)}</div>
+      <div class="vrow"><span class="sub">Attendance</span><b>${L10.attendance}</b></div>
+      <div class="vrow"><span class="sub">Started on time</span><b style="color:${L10.onTime?'#16a34a':'#dc2626'}">${L10.onTime?'Yes':'No'}</b></div>
+      <div class="vrow"><span class="sub">Weeks streak</span><b>${L10.streak}</b></div></div>`;
+  }},
+  peopleAnalyzer:{title:'People Analyzer (GWC)',group:'EOS',span:true,sub:'Right people, right seats · core values + Get it / Want it / Capacity',render(){
+    const cell=v=>v===true?'<span style="color:#16a34a;font-weight:800">✓</span>':v==='?'?'<span style="color:#d97706;font-weight:800">?</span>':'<span style="color:#dc2626;font-weight:800">✗</span>';
+    const cv=v=>v==='+'?'<span class="tag g">+</span>':v==='±'?'<span class="tag a">±</span>':'<span class="tag r">−</span>';
+    return `<table><thead><tr><th>Team member</th><th>Seat</th><th class="num">Values</th><th class="num">Get it</th><th class="num">Want it</th><th class="num">Capacity</th></tr></thead><tbody>${PEOPLE.map(p=>`<tr><td>${p.name}</td><td>${p.role}</td><td class="num">${cv(p.cv)}</td><td class="num">${cell(p.g)}</td><td class="num">${cell(p.w)}</td><td class="num">${cell(p.c)}</td></tr>`).join('')}</tbody></table>`;
+  }},
+  eosComponents:{title:'EOS components checkup',group:'EOS',sub:'Six key components health',render(){
+    return `<div class="bars">${COMPONENTS.map(c=>{const col=c.v>=80?'#16a34a':c.v>=65?'#d97706':'#dc2626';return `<div class="bar-row"><span class="n">${c.c}</span><span class="track"><i style="width:${c.v}%;background:${col}"></i></span><span class="v">${c.v}%</span></div>`;}).join('')}</div>
+      <div class="sub" style="margin-top:8px">Strengthen your weakest component first.</div>`;
+  }},
+  oneYearPlan:{title:'1-Year Plan',group:'EOS',sub:PLAN.year+' goals & pace',render(){
+    const rp=Math.round(PLAN.revActual/PLAN.revGoal*100),pp=Math.round(PLAN.profitActual/PLAN.profitGoal*100);
+    return `<div class="vd">
+      <div class="vrow"><span class="sub">Revenue · ${money(PLAN.revGoal)}</span><b>${money(PLAN.revActual)} (${rp}%)</b></div>
+      <div class="tgt"><i style="width:${rp}%;background:#ED4E0D"></i></div>
+      <div class="vrow" style="margin-top:8px"><span class="sub">Net profit · ${money(PLAN.profitGoal)}</span><b>${money(PLAN.profitActual)} (${pp}%)</b></div>
+      <div class="tgt"><i style="width:${pp}%;background:#16a34a"></i></div>
+      <div class="sub" style="margin-top:8px">~50% of year elapsed — pace ${rp>=48?'on track':'behind'}.</div></div>`;
+  }},
+  coreValues:{title:'Core values',group:'EOS',sub:'What we hire, fire & reward on',render(){
+    return `<div style="display:flex;flex-wrap:wrap;gap:8px">${VALUES.map(v=>`<span style="background:#fff7f2;border:1px solid #f6c9b1;color:#b8430f;font-weight:800;font-size:12.5px;padding:8px 12px;border-radius:999px">${v}</span>`).join('')}</div>`;
+  }},
+};
+const GROUPS=['Value drivers','Growth','Capacity','People','Cash flow','Strategy','EOS','Sales','Operations','Finance','Reputation'];
+
+/* ---------------- render ---------------- */
+const grid=document.getElementById('grid');
+function render(){
+  document.getElementById('ctx').textContent=`${REP==='all'?'Whole team':REPS.find(r=>r.id===REP).name} · ${({today:'Today',week:'This week',month:'This month',quarter:'This quarter'})[RANGE]}`;
+  grid.innerHTML=layout[ROLE].map(id=>{
+    const w=WIDGETS[id];if(!w)return'';
+    return `<section class="card ${w.span?'span2':''}" draggable="${EDIT}" data-id="${id}">
+      <div class="card-h"><div><h3>${w.title}</h3>${w.sub?`<p>${w.sub}</p>`:''}</div>
+        <div class="ctools"><button class="rm" data-rm="${id}" title="Remove">✕</button><span class="drag-handle" title="Drag">⋮⋮</span></div></div>
+      ${w.render()}</section>`;
+  }).join('');
+  bindDrag();
+  document.body.classList.toggle('editing',EDIT);
+}
+
+/* add-widget tray */
+function renderTray(){
+  const active=new Set(layout[ROLE]);
+  const tray=document.getElementById('tray');
+  tray.innerHTML=`<h3>Add widgets to your ${ROLE} dashboard</h3><p class="sub">Click to add. Remove with the ✕ on any card in Customize mode. Drag cards to rearrange.</p>`+
+    GROUPS.map(g=>{
+      const items=Object.entries(WIDGETS).filter(([id,w])=>w.group===g);
+      if(!items.length)return'';
+      return `<div class="grp">${g}</div><div class="opts">`+items.map(([id,w])=>{
+        const on=active.has(id);
+        return `<div class="wopt"><div class="t">${w.title}<small>${w.sub||''}</small></div><button data-add="${id}" class="${on?'added':''}">${on?'Added':'＋ Add'}</button></div>`;
+      }).join('')+`</div>`;
+    }).join('');
+}
+
+/* drag reorder */
+let dragId=null;
+function bindDrag(){
+  grid.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('dragstart',e=>{dragId=c.dataset.id;c.classList.add('dragging');});
+    c.addEventListener('dragend',()=>{dragId=null;c.classList.remove('dragging');});
+    c.addEventListener('dragover',e=>{e.preventDefault();});
+    c.addEventListener('drop',e=>{e.preventDefault();const tgt=c.dataset.id;if(!dragId||dragId===tgt)return;
+      const arr=layout[ROLE];arr.splice(arr.indexOf(dragId),1);arr.splice(arr.indexOf(tgt),0,dragId);render();});
+  });
+}
+
+/* events */
+document.getElementById('roles').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#roles button').forEach(x=>x.classList.remove('on'));b.classList.add('on');ROLE=b.dataset.role;renderTray();render();});
+document.getElementById('rangeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#rangeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');RANGE=b.dataset.r;render();});
+document.getElementById('repSel').addEventListener('change',e=>{REP=e.target.value;render();});
+document.getElementById('editBtn').addEventListener('click',e=>{EDIT=!EDIT;e.target.classList.toggle('on',EDIT);e.target.textContent=EDIT?'✓ Done':'✎ Customize';render();});
+document.getElementById('addBtn').addEventListener('click',()=>{const t=document.getElementById('tray');t.classList.toggle('open');renderTray();});
+document.getElementById('tray').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b)return;
+  const id=b.dataset.add;const arr=layout[ROLE];if(!arr.includes(id)){arr.push(id);render();}renderTray();});
+grid.addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;
+  const id=b.dataset.rm;layout[ROLE]=layout[ROLE].filter(x=>x!==id);render();renderTray();});
+
+/* init */
+document.getElementById('repSel').innerHTML='<option value="all">Whole team</option>'+REPS.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+render();
+</script>
+</body>
+</html>
